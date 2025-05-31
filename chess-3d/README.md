@@ -1,8 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chess-3D
+
+Welcome to the Chess-3D project! This is a modern web application built using [Next.js](https://nextjs.org) with the power of [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) at its core.
 
 ## Getting Started
 
-First, run the development server:
+Begin by starting the development server. Choose your preferred package manager:
 
 ```bash
 npm run dev
@@ -14,23 +16,24 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the project. The page updates automatically as you modify the source files.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Modify the main page by editing `app/page.tsx` to see live changes.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Fonts & Optimization
 
-## Learn More
+This project leverages [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) for streamlined font optimization, including the use of the [Geist](https://vercel.com/font) font family developed for Vercel.
 
-To learn more about Next.js, take a look at the following resources:
+## Explore More
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Learn more about Next.js through these helpful resources:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Next.js Documentation](https://nextjs.org/docs) – Detailed guides on Next.js features and API usage.
+- [Learn Next.js](https://nextjs.org/learn) – An interactive tutorial to get you started.
+- Check out the [Next.js GitHub repository](https://github.com/vercel/next.js) for contributions and feedback.
 
-## Deploy on Vercel
+## Deploying on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Deploy your Chess-3D app quickly with the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme). Review the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) for more information.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Happy coding and enjoy building your 3D chess experience!

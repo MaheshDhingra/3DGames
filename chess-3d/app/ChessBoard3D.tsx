@@ -4,27 +4,46 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { Chess, Square } from 'chess.js';
 
-const BOARD_SIZE = 8;
-const SQUARE_SIZE = 1;
-
-function createChessBoard(scene: THREE.Scene) {
-  const white = 0xffffff;
-  const black = 0x222222;
-  for (let x = 0; x < BOARD_SIZE; x++) {
-    for (let z = 0; z < BOARD_SIZE; z++) {
-      const color = (x + z) % 2 === 0 ? white : black;
-      const geometry = new THREE.BoxGeometry(SQUARE_SIZE, 0.1, SQUARE_SIZE);
-      const material = new THREE.MeshStandardMaterial({ color });
-      const square = new THREE.Mesh(geometry, material);
-      square.position.set(
-        x - BOARD_SIZE / 2 + SQUARE_SIZE / 2,
-        0,
-        z - BOARD_SIZE / 2 + SQUARE_SIZE / 2
-      );
-      scene.add(square);
-    }
-  }
-}
+const BOARD_THEMES = [
+  {
+    name: 'Classic',
+    light: 0xffffff,
+    dark: 0x222222,
+    pieceW: 0xfafafa,
+    pieceB: 0x222222,
+    bg: 0xbfd1e5,
+  },
+  {
+    name: 'Blue Ice',
+    light: 0xcce6ff,
+    dark: 0x336699,
+    pieceW: 0xe0f7fa,
+    pieceB: 0x01579b,
+    bg: 0xe3f2fd,
+  },
+  {
+    name: 'Green Forest',
+    light: 0xe8f5e9,
+    dark: 0x388e3c,
+    pieceW: 0xc8e6c9,
+    pieceB: 0x1b5e20,
+    bg: 0xdcedc8,
+  },
+  {
+    name: 'Brown Wood',
+    light: 0xffe0b2,
+    dark: 0x8d6e63,
+    pieceW: 0xfff8e1,
+    pieceB: 0x4e342e,
+    bg: 0xfff3e0,
+  },
+];
+const WEATHER = [
+  { name: 'None' },
+  { name: 'Rain' },
+  { name: 'Snow' },
+  { name: 'Heat' },
+];
 
 // Simple 3D models for chess pieces using basic shapes
 function createPiece(type: string, color: number): THREE.Mesh {
@@ -232,124 +251,6 @@ function createPiece(type: string, color: number): THREE.Mesh {
   return mesh;
 }
 
-function addPieces(scene: THREE.Scene) {
-  const pieceOrder = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'];
-  const white = 0xfafafa;
-  const black = 0x222222;
-  // White pieces
-  for (let i = 0; i < 8; i++) {
-    // Pawns
-    const pawn = createPiece('pawn', white);
-    pawn.position.set(i - 4 + 0.5, 0.05, -2.5);
-    scene.add(pawn);
-    // Main pieces
-    const piece = createPiece(pieceOrder[i], white);
-    piece.position.set(i - 4 + 0.5, 0.05, -3.5);
-    scene.add(piece);
-  }
-  // Black pieces
-  for (let i = 0; i < 8; i++) {
-    // Pawns
-    const pawn = createPiece('pawn', black);
-    pawn.position.set(i - 4 + 0.5, 0.05, 2.5);
-    scene.add(pawn);
-    // Main pieces
-    const piece = createPiece(pieceOrder[i], black);
-    piece.position.set(i - 4 + 0.5, 0.05, 3.5);
-    scene.add(piece);
-  }
-}
-
-// --- Chess logic ---
-const initialBoard: Array<Array<{ type: string | null; color: 'w' | 'b' | null }>> = [
-  [
-    { type: 'rook', color: 'w' },
-    { type: 'knight', color: 'w' },
-    { type: 'bishop', color: 'w' },
-    { type: 'queen', color: 'w' },
-    { type: 'king', color: 'w' },
-    { type: 'bishop', color: 'w' },
-    { type: 'knight', color: 'w' },
-    { type: 'rook', color: 'w' },
-  ],
-  Array(8).fill({ type: 'pawn', color: 'w' }),
-  ...Array(4).fill(Array(8).fill({ type: null, color: null })),
-  Array(8).fill({ type: 'pawn', color: 'b' }),
-  [
-    { type: 'rook', color: 'b' },
-    { type: 'knight', color: 'b' },
-    { type: 'bishop', color: 'b' },
-    { type: 'queen', color: 'b' },
-    { type: 'king', color: 'b' },
-    { type: 'bishop', color: 'b' },
-    { type: 'knight', color: 'b' },
-    { type: 'rook', color: 'b' },
-  ],
-];
-
-type Piece = { type: string | null; color: 'w' | 'b' | null };
-type Board = Piece[][];
-
-function getPieceColor(color: 'w' | 'b' | null) {
-  if (color === 'w') return 0xfafafa;
-  if (color === 'b') return 0x222222;
-  return 0x888888;
-}
-
-function getPossibleMoves(board: Board, x: number, y: number): [number, number][] {
-  const piece = board[y][x];
-  if (!piece.type) return [];
-  const moves: [number, number][] = [];
-  if (piece.type === 'pawn') {
-    const dir = piece.color === 'w' ? 1 : -1;
-    const ny = y + dir;
-    if (ny >= 0 && ny < 8 && !board[ny][x].type) moves.push([x, ny]);
-  }
-  // Add more logic for other pieces as needed
-  return moves;
-}
-
-const BOARD_THEMES = [
-  {
-    name: 'Classic',
-    light: 0xffffff,
-    dark: 0x222222,
-    pieceW: 0xfafafa,
-    pieceB: 0x222222,
-    bg: 0xbfd1e5,
-  },
-  {
-    name: 'Blue Ice',
-    light: 0xcce6ff,
-    dark: 0x336699,
-    pieceW: 0xe0f7fa,
-    pieceB: 0x01579b,
-    bg: 0xe3f2fd,
-  },
-  {
-    name: 'Green Forest',
-    light: 0xe8f5e9,
-    dark: 0x388e3c,
-    pieceW: 0xc8e6c9,
-    pieceB: 0x1b5e20,
-    bg: 0xdcedc8,
-  },
-  {
-    name: 'Brown Wood',
-    light: 0xffe0b2,
-    dark: 0x8d6e63,
-    pieceW: 0xfff8e1,
-    pieceB: 0x4e342e,
-    bg: 0xfff3e0,
-  },
-];
-const WEATHER = [
-  { name: 'None' },
-  { name: 'Rain' },
-  { name: 'Snow' },
-  { name: 'Heat' },
-];
-
 export default function ChessBoard3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [chess] = useState(() => new Chess());
@@ -364,9 +265,6 @@ export default function ChessBoard3D() {
   function toSquare(x: number, y: number): Square {
     return (String.fromCharCode(97 + x) + (8 - y)) as Square;
   }
-  function fromSquare(square: Square): [number, number] {
-    return [square.charCodeAt(0) - 97, 8 - parseInt(square[1])];
-  }
   useEffect(() => {
     if (!mountRef.current) return;
     const width = mountRef.current.clientWidth || window.innerWidth;
@@ -380,8 +278,7 @@ export default function ChessBoard3D() {
     renderer.setSize(width, height);
     renderer.setClearColor(theme.bg);
     mountRef.current.appendChild(renderer.domElement);
-    let controls: OrbitControls | undefined;
-    controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.enablePan = false;
@@ -395,22 +292,16 @@ export default function ChessBoard3D() {
     dirLight.position.set(5, 10, 7.5);
     scene.add(dirLight);
     // --- Draw thick border under the board ---
-    const borderThickness = 0.5;
-    const borderGeometry = new THREE.BoxGeometry(8 + borderThickness * 2, 0.5, 8 + borderThickness * 2);
-    const borderMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const borderThickness = 0.25;
+    const borderGeometry = new THREE.BoxGeometry(8 + borderThickness * 2, 0.25, 8 + borderThickness * 2);
+    const borderMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
     const border = new THREE.Mesh(borderGeometry, borderMaterial);
-    border.position.set(0, -0.15, 0);
+    border.position.set(0, -0.13, 0);
     scene.add(border);
-    // --- Draw slightly raised board for better border visibility ---
-    const boardGeometry = new THREE.BoxGeometry(8, 0.12, 8);
-    const boardMaterial = new THREE.MeshStandardMaterial({ color: theme.bg });
-    const boardMesh = new THREE.Mesh(boardGeometry, boardMaterial);
-    boardMesh.position.set(0, 0.01, 0);
-    scene.add(boardMesh);
-    // --- Draw board squares and pieces ---
+    // --- Draw board and pieces ---
     const board = chess.board();
-    for (let y = 0; y < 8; y++) {
-      for (let x = 0; x < 8; x++) {
+    for (let x = 0; x < 8; x++) {
+      for (let y = 0; y < 8; y++) {
         const color = (x + y) % 2 === 0 ? theme.light : theme.dark;
         const geometry = new THREE.BoxGeometry(1, 0.1, 1);
         let matColor = color;
@@ -421,14 +312,14 @@ export default function ChessBoard3D() {
         if (possibleMoves.includes(sq)) matColor = 0x00bfff;
         const material = new THREE.MeshStandardMaterial({ color: matColor });
         const square = new THREE.Mesh(geometry, material);
-        square.position.set(x - 4 + 0.5, 0.07, y - 4 + 0.5);
+        square.position.set(x - 4 + 0.5, 0, y - 4 + 0.5);
         square.userData = { x, y, sq, isSquare: true };
         scene.add(square);
         // Piece
         const piece = board[y][x];
         if (piece) {
           const mesh = createPiece(piece.type, piece.color === 'w' ? theme.pieceW : theme.pieceB);
-          mesh.position.set(x - 4 + 0.5, 0.18, y - 4 + 0.5);
+          mesh.position.set(x - 4 + 0.5, 0.05, y - 4 + 0.5);
           mesh.userData = { x, y, sq, isPiece: true };
           scene.add(mesh);
         }
@@ -488,7 +379,7 @@ export default function ChessBoard3D() {
             setPossibleMoves([]);
           } else if (isPiece && chess.get(sq) && chess.get(sq)!.color === chess.turn()) {
             setSelected(sq);
-            setPossibleMoves(chess.moves({ square: sq, verbose: true }).map((m: any) => m.to));
+            setPossibleMoves(chess.moves({ square: sq, verbose: true }).map((m: { to: Square }) => m.to));
           } else {
             setSelected(null);
             setPossibleMoves([]);
@@ -524,7 +415,7 @@ export default function ChessBoard3D() {
       }
       // Animate heat shimmer
       if (heatPlane) {
-        heatPlane.material.opacity = 0.18 + 0.08 * Math.sin(Date.now() * 0.002);
+        (heatPlane.material as THREE.MeshBasicMaterial).opacity = 0.18 + 0.08 * Math.sin(Date.now() * 0.002);
       }
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -536,7 +427,7 @@ export default function ChessBoard3D() {
       mountRef.current?.removeChild(renderer.domElement);
     }
     return cleanup;
-  }, [fen, selected, possibleMoves, themeIdx, weatherIdx]);
+  }, [fen, selected, possibleMoves, themeIdx, weatherIdx, chess, theme.bg, theme.dark, theme.light, theme.pieceB, theme.pieceW, weather]);
 
   // --- UI overlay for theme and weather ---
   return (

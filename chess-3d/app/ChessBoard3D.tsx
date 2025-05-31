@@ -395,16 +395,22 @@ export default function ChessBoard3D() {
     dirLight.position.set(5, 10, 7.5);
     scene.add(dirLight);
     // --- Draw thick border under the board ---
-    const borderThickness = 0.25;
-    const borderGeometry = new THREE.BoxGeometry(8 + borderThickness * 2, 0.25, 8 + borderThickness * 2);
-    const borderMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const borderThickness = 0.5;
+    const borderGeometry = new THREE.BoxGeometry(8 + borderThickness * 2, 0.5, 8 + borderThickness * 2);
+    const borderMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
     const border = new THREE.Mesh(borderGeometry, borderMaterial);
-    border.position.set(0, -0.13, 0);
+    border.position.set(0, -0.15, 0);
     scene.add(border);
-    // --- Draw board and pieces ---
+    // --- Draw slightly raised board for better border visibility ---
+    const boardGeometry = new THREE.BoxGeometry(8, 0.12, 8);
+    const boardMaterial = new THREE.MeshStandardMaterial({ color: theme.bg });
+    const boardMesh = new THREE.Mesh(boardGeometry, boardMaterial);
+    boardMesh.position.set(0, 0.01, 0);
+    scene.add(boardMesh);
+    // --- Draw board squares and pieces ---
     const board = chess.board();
-    for (let x = 0; x < 8; x++) {
-      for (let y = 0; y < 8; y++) {
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
         const color = (x + y) % 2 === 0 ? theme.light : theme.dark;
         const geometry = new THREE.BoxGeometry(1, 0.1, 1);
         let matColor = color;
@@ -415,14 +421,14 @@ export default function ChessBoard3D() {
         if (possibleMoves.includes(sq)) matColor = 0x00bfff;
         const material = new THREE.MeshStandardMaterial({ color: matColor });
         const square = new THREE.Mesh(geometry, material);
-        square.position.set(x - 4 + 0.5, 0, y - 4 + 0.5);
+        square.position.set(x - 4 + 0.5, 0.07, y - 4 + 0.5);
         square.userData = { x, y, sq, isSquare: true };
         scene.add(square);
         // Piece
         const piece = board[y][x];
         if (piece) {
           const mesh = createPiece(piece.type, piece.color === 'w' ? theme.pieceW : theme.pieceB);
-          mesh.position.set(x - 4 + 0.5, 0.05, y - 4 + 0.5);
+          mesh.position.set(x - 4 + 0.5, 0.18, y - 4 + 0.5);
           mesh.userData = { x, y, sq, isPiece: true };
           scene.add(mesh);
         }

@@ -223,51 +223,125 @@ export default function ChessBoard3D() {
     // --- Draw board squares ---
     for (let x = 0; x < BOARD_SIZE; x++) {
       for (let z = 0; z < BOARD_SIZE; z++) {
+        // Use more visually appealing colors and a subtle gloss effect
         const color = (x + z) % 2 === 0 ? BOARD_THEMES[boardTheme].light : BOARD_THEMES[boardTheme].dark;
         const geometry = new THREE.BoxGeometry(SQUARE_SIZE, 0.1, SQUARE_SIZE);
-        const material = new THREE.MeshStandardMaterial({ color });
+        const material = new THREE.MeshPhysicalMaterial({ color, metalness: 0.25, roughness: 0.35, clearcoat: 0.5, clearcoatRoughness: 0.15 });
         const square = new THREE.Mesh(geometry, material);
         square.position.set(x - BOARD_SIZE / 2 + SQUARE_SIZE / 2, 0, z - BOARD_SIZE / 2 + SQUARE_SIZE / 2);
         square.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isSquare: true };
         boardGroupRef.current.add(square);
       }
     }
-    // --- Draw pieces with theme ---
+    // --- Draw pieces with classic shapes ---
     const chess = chessRef.current;
     chess.board().forEach((row, z) => {
       row.forEach((piece, x) => {
         if (!piece) return;
         let mesh: THREE.Mesh;
         let color = piece.color === 'w' ? PIECE_THEMES[pieceTheme].white : PIECE_THEMES[pieceTheme].black;
-        let material = new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.5 });
+        let material = new THREE.MeshPhysicalMaterial({ color, metalness: 0.55, roughness: 0.25, clearcoat: 0.7, clearcoatRoughness: 0.1 });
         const pos: [number, number, number] = [x - BOARD_SIZE / 2 + SQUARE_SIZE / 2, 0.3, z - BOARD_SIZE / 2 + SQUARE_SIZE / 2];
         switch (piece.type) {
-          case 'p':
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.45, 16), material);
+          case 'p': // Pawn
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.18, 0.22, 0.32, 24), material
+            );
+            const pawnHead = new THREE.Mesh(
+              new THREE.SphereGeometry(0.13, 18, 12), material
+            );
+            pawnHead.position.set(pos[0], pos[1] + 0.22, pos[2]);
             mesh.position.set(pos[0], pos[1], pos[2]);
-            break;
-          case 'n':
-            mesh = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 16), material);
-            mesh.position.set(pos[0], pos[1] + 0.1, pos[2]);
-            break;
-          case 'b':
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 0.6, 16), material);
-            mesh.position.set(pos[0], pos[1] + 0.1, pos[2]);
-            break;
-          case 'r':
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.45, 0.32), material);
+            mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+            if (boardGroupRef.current) {
+              boardGroupRef.current.add(mesh);
+              boardGroupRef.current.add(pawnHead);
+            }
+            return;
+          case 'n': // Knight
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.16, 0.22, 0.28, 18), material
+            );
+            const knightHead = new THREE.Mesh(
+              new THREE.ConeGeometry(0.13, 0.28, 16), material
+            );
             mesh.position.set(pos[0], pos[1], pos[2]);
-            break;
-          case 'q':
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 0.7, 16), material);
-            mesh.position.set(pos[0], pos[1] + 0.15, pos[2]);
-            break;
-          case 'k':
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.8, 16), material);
-            mesh.position.set(pos[0], pos[1] + 0.18, pos[2]);
-            break;
+            knightHead.position.set(pos[0], pos[1] + 0.22, pos[2]);
+            mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+            if (boardGroupRef.current) {
+              boardGroupRef.current.add(mesh);
+              boardGroupRef.current.add(knightHead);
+            }
+            return;
+          case 'b': // Bishop
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.15, 0.21, 0.32, 18), material
+            );
+            const bishopHead = new THREE.Mesh(
+              new THREE.SphereGeometry(0.12, 16, 10), material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
+            bishopHead.position.set(pos[0], pos[1] + 0.22, pos[2]);
+            mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+            if (boardGroupRef.current) {
+              boardGroupRef.current.add(mesh);
+              boardGroupRef.current.add(bishopHead);
+            }
+            return;
+          case 'r': // Rook
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.18, 0.18, 0.28, 16), material
+            );
+            const rookTop = new THREE.Mesh(
+              new THREE.BoxGeometry(0.18, 0.08, 0.18), material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
+            rookTop.position.set(pos[0], pos[1] + 0.18, pos[2]);
+            mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+            if (boardGroupRef.current) {
+              boardGroupRef.current.add(mesh);
+              boardGroupRef.current.add(rookTop);
+            }
+            return;
+          case 'q': // Queen
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.17, 0.25, 0.38, 24), material
+            );
+            const queenCrown = new THREE.Mesh(
+              new THREE.SphereGeometry(0.13, 16, 10), material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
+            queenCrown.position.set(pos[0], pos[1] + 0.28, pos[2]);
+            mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+            if (boardGroupRef.current) {
+              boardGroupRef.current.add(mesh);
+              boardGroupRef.current.add(queenCrown);
+            }
+            return;
+          case 'k': // King
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.18, 0.26, 0.38, 24), material
+            );
+            const kingCrown = new THREE.Mesh(
+              new THREE.SphereGeometry(0.12, 16, 10), material
+            );
+            const kingCross = new THREE.Mesh(
+              new THREE.BoxGeometry(0.04, 0.16, 0.04), material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
+            kingCrown.position.set(pos[0], pos[1] + 0.28, pos[2]);
+            kingCross.position.set(pos[0], pos[1] + 0.38, pos[2]);
+            mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+            if (boardGroupRef.current) {
+              boardGroupRef.current.add(mesh);
+              boardGroupRef.current.add(kingCrown);
+              boardGroupRef.current.add(kingCross);
+            }
+            return;
           default:
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16), material);
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16), material
+            );
             mesh.position.set(pos[0], pos[1], pos[2]);
         }
         mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
@@ -341,24 +415,24 @@ export default function ChessBoard3D() {
   // --- UI for themes, weather, and stats ---
   return (
     <>
-      <div style={{ position: 'absolute', left: 24, top: 24, zIndex: 10, background: 'rgba(255,255,255,0.85)', borderRadius: 12, boxShadow: '0 2px 12px #0001', padding: 16, minWidth: 160 }}>
-        <div style={{ fontWeight: 700, marginBottom: 8 }}>Board Theme</div>
-        <select value={boardTheme} onChange={e => setBoardTheme(Number(e.target.value))} style={{ width: '100%', marginBottom: 12 }}>
+      <div style={{ position: 'absolute', left: 24, top: 24, zIndex: 10, background: 'rgba(30,30,40,0.97)', borderRadius: 14, boxShadow: '0 2px 16px #0006', padding: 20, minWidth: 180, color: '#f8f8ff', fontFamily: 'Segoe UI, Arial, sans-serif', fontWeight: 500, fontSize: 17, letterSpacing: 0.2 }}>
+        <div style={{ fontWeight: 800, marginBottom: 10, fontSize: 20, color: '#fff' }}>Board Theme</div>
+        <select value={boardTheme} onChange={e => setBoardTheme(Number(e.target.value))} style={{ width: '100%', marginBottom: 14, background: '#23232b', color: '#fff', border: 'none', borderRadius: 6, padding: 6, fontSize: 16 }}>
           {BOARD_THEMES.map((t, i) => <option value={i} key={t.name}>{t.name}</option>)}
         </select>
-        <div style={{ fontWeight: 700, marginBottom: 8 }}>Piece Theme</div>
-        <select value={pieceTheme} onChange={e => setPieceTheme(Number(e.target.value))} style={{ width: '100%', marginBottom: 12 }}>
+        <div style={{ fontWeight: 800, marginBottom: 10, fontSize: 20, color: '#fff' }}>Piece Theme</div>
+        <select value={pieceTheme} onChange={e => setPieceTheme(Number(e.target.value))} style={{ width: '100%', marginBottom: 14, background: '#23232b', color: '#fff', border: 'none', borderRadius: 6, padding: 6, fontSize: 16 }}>
           {PIECE_THEMES.map((t, i) => <option value={i} key={t.name}>{t.name}</option>)}
         </select>
-        <div style={{ fontWeight: 700, marginBottom: 8 }}>Weather</div>
-        <select value={weather} onChange={e => setWeather(Number(e.target.value))} style={{ width: '100%' }}>
+        <div style={{ fontWeight: 800, marginBottom: 10, fontSize: 20, color: '#fff' }}>Weather</div>
+        <select value={weather} onChange={e => setWeather(Number(e.target.value))} style={{ width: '100%', background: '#23232b', color: '#fff', border: 'none', borderRadius: 6, padding: 6, fontSize: 16 }}>
           {WEATHER.map((t, i) => <option value={i} key={t.name}>{t.name}</option>)}
         </select>
-        <hr style={{ margin: '16px 0' }} />
-        <div style={{ fontWeight: 700, marginBottom: 4 }}>Stats</div>
-        <div>Moves: {moveCount}</div>
-        <div>Turn: {turn === 'w' ? 'White' : 'Black'}</div>
-        <div>Status: {status}</div>
+        <hr style={{ margin: '18px 0', borderColor: '#444' }} />
+        <div style={{ fontWeight: 800, marginBottom: 6, fontSize: 18, color: '#fff' }}>Stats</div>
+        <div style={{ marginBottom: 2 }}>Moves: <span style={{ color: '#ffe066', fontWeight: 700 }}>{moveCount}</span></div>
+        <div style={{ marginBottom: 2 }}>Turn: <span style={{ color: turn === 'w' ? '#b4e7ff' : '#ffb4b4', fontWeight: 700 }}>{turn === 'w' ? 'White' : 'Black'}</span></div>
+        <div>Status: <span style={{ color: '#fff', fontWeight: 600 }}>{status}</span></div>
       </div>
       <div ref={mountRef} style={{ width: '100vw', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 0 }} />
     </>

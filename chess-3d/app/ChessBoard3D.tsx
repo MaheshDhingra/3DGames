@@ -1,341 +1,134 @@
 'use client';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
-import { Chess, Square, PieceSymbol } from 'chess.js';
+import { Chess, Square, Move } from 'chess.js';
 
-const BOARD_THEMES = [
-  {
-    name: 'Classic',
-    light: 0xffffff,
-    dark: 0x222222,
-    pieceW: 0xfafafa,
-    pieceB: 0x222222,
-    bg: 0xbfd1e5,
-  },
-  {
-    name: 'Blue Ice',
-    light: 0xcce6ff,
-    dark: 0x336699,
-    pieceW: 0xe0f7fa,
-    pieceB: 0x01579b,
-    bg: 0xe3f2fd,
-  },
-  {
-    name: 'Green Forest',
-    light: 0xe8f5e9,
-    dark: 0x388e3c,
-    pieceW: 0xc8e6c9,
-    pieceB: 0x1b5e20,
-    bg: 0xdcedc8,
-  },
-  {
-    name: 'Brown Wood',
-    light: 0xffe0b2,
-    dark: 0x8d6e63,
-    pieceW: 0xfff8e1,
-    pieceB: 0x4e342e,
-    bg: 0xfff3e0,
-  },
-];
-const WEATHER = [
-  { name: 'None' },
-  { name: 'Rain' },
-  { name: 'Snow' },
-  { name: 'Heat' },
-];
+const BOARD_SIZE = 8;
+const SQUARE_SIZE = 1;
 
-function createPiece(type: PieceSymbol, color: number): THREE.Mesh {
-  let mesh: THREE.Mesh;
-  switch (type) {
-    case 'p': {
-      // Pawn
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.25, 0.1, 12), // reduced segments
-        new THREE.MeshStandardMaterial({ color })
+function createChessBoard(scene: THREE.Scene) {
+  const white = 0xffffff;
+  const black = 0x222222;
+  for (let x = 0; x < BOARD_SIZE; x++) {
+    for (let z = 0; z < BOARD_SIZE; z++) {
+      const color = (x + z) % 2 === 0 ? white : black;
+      const geometry = new THREE.BoxGeometry(SQUARE_SIZE, 0.1, SQUARE_SIZE);
+      const material = new THREE.MeshStandardMaterial({ color });
+      const square = new THREE.Mesh(geometry, material);
+      square.position.set(
+        x - BOARD_SIZE / 2 + SQUARE_SIZE / 2,
+        0,
+        z - BOARD_SIZE / 2 + SQUARE_SIZE / 2
       );
-      base.position.y = 0.05;
-      group.add(base);
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.13, 0.18, 0.28, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      body.position.y = 0.24;
-      group.add(body);
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.11, 12, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      head.position.y = 0.43;
-      group.add(head);
-      group.position.y = 0.05;
-      mesh = group as unknown as THREE.Mesh;
-      break;
+      square.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isSquare: true };
+      scene.add(square);
     }
-    case 'r': {
-      // Rook
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.25, 0.1, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      base.position.y = 0.05;
-      group.add(base);
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.16, 0.18, 0.32, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      body.position.y = 0.26;
-      group.add(body);
-      const top = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.18, 0.08, 8),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      top.position.y = 0.44;
-      group.add(top);
-      for (let i = 0; i < 4; i++) {
-        const battlement = new THREE.Mesh(
-          new THREE.BoxGeometry(0.05, 0.07, 0.08),
-          new THREE.MeshStandardMaterial({ color })
-        );
-        battlement.position.set(Math.cos((i * Math.PI) / 2) * 0.13, 0.51, Math.sin((i * Math.PI) / 2) * 0.13);
-        group.add(battlement);
-      }
-      group.position.y = 0.05;
-      mesh = group as unknown as THREE.Mesh;
-      break;
-    }
-    case 'n': {
-      // Knight
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.25, 0.1, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      base.position.y = 0.05;
-      group.add(base);
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.13, 0.18, 0.22, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      body.position.y = 0.21;
-      group.add(body);
-      const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.13, 0.22, 0.08),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      head.position.set(0, 0.38, 0.04);
-      group.add(head);
-      const mane = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 0.18, 6),
-        new THREE.MeshStandardMaterial({ color: 0x888888 })
-      );
-      mane.position.set(0, 0.38, 0.09);
-      mane.rotation.x = Math.PI / 2;
-      group.add(mane);
-      group.position.y = 0.05;
-      mesh = group as unknown as THREE.Mesh;
-      break;
-    }
-    case 'b': {
-      // Bishop
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.25, 0.1, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      base.position.y = 0.05;
-      group.add(base);
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.13, 0.18, 0.28, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      body.position.y = 0.24;
-      group.add(body);
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 12, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      head.position.y = 0.41;
-      group.add(head);
-      const cut = new THREE.Mesh(
-        new THREE.BoxGeometry(0.03, 0.18, 0.03),
-        new THREE.MeshStandardMaterial({ color: 0x888888 })
-      );
-      cut.position.set(0, 0.41, 0.12);
-      group.add(cut);
-      group.position.y = 0.05;
-      mesh = group as unknown as THREE.Mesh;
-      break;
-    }
-    case 'q': {
-      // Queen
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.25, 0.1, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      base.position.y = 0.05;
-      group.add(base);
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.15, 0.19, 0.32, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      body.position.y = 0.26;
-      group.add(body);
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.13, 12, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      head.position.y = 0.43;
-      group.add(head);
-      for (let i = 0; i < 5; i++) {
-        const spike = new THREE.Mesh(
-          new THREE.ConeGeometry(0.03, 0.09, 6),
-          new THREE.MeshStandardMaterial({ color })
-        );
-        spike.position.set(Math.cos((i * 2 * Math.PI) / 5) * 0.09, 0.53, Math.sin((i * 2 * Math.PI) / 5) * 0.09);
-        group.add(spike);
-      }
-      group.position.y = 0.05;
-      mesh = group as unknown as THREE.Mesh;
-      break;
-    }
-    case 'k': {
-      // King
-      const group = new THREE.Group();
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.25, 0.1, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      base.position.y = 0.05;
-      group.add(base);
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.15, 0.19, 0.32, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      body.position.y = 0.26;
-      group.add(body);
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 12, 12),
-        new THREE.MeshStandardMaterial({ color })
-      );
-      head.position.y = 0.43;
-      group.add(head);
-      const crossV = new THREE.Mesh(
-        new THREE.BoxGeometry(0.04, 0.16, 0.04),
-        new THREE.MeshStandardMaterial({ color: 0x888888 })
-      );
-      crossV.position.y = 0.54;
-      group.add(crossV);
-      const crossH = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 0.04, 0.04),
-        new THREE.MeshStandardMaterial({ color: 0x888888 })
-      );
-      crossH.position.y = 0.54;
-      group.add(crossH);
-      group.position.y = 0.05;
-      mesh = group as unknown as THREE.Mesh;
-      break;
-    }
-    default:
-      mesh = new THREE.Mesh();
   }
-  return mesh;
 }
 
 export default function ChessBoard3D() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
   const boardGroupRef = useRef<THREE.Group | null>(null);
-  const weatherGroupRef = useRef<THREE.Group | null>(null);
-  const [chess] = useState(() => new Chess());
-  const [fen, setFen] = useState(chess.fen());
-  const [selected, setSelected] = useState<Square | null>(null);
-  const [possibleMoves, setPossibleMoves] = useState<Square[]>([]);
-  // --- Add refs for latest selected and possibleMoves ---
+  const raycaster = useRef(new THREE.Raycaster());
+  const mouse = useRef(new THREE.Vector2());
+
+  // Chess state
+  const [fen, setFen] = React.useState('start');
+  const [selected, setSelected] = React.useState<Square | null>(null);
+  const [possibleMoves, setPossibleMoves] = React.useState<Square[]>([]);
   const selectedRef = useRef<Square | null>(null);
   const possibleMovesRef = useRef<Square[]>([]);
   useEffect(() => { selectedRef.current = selected; }, [selected]);
   useEffect(() => { possibleMovesRef.current = possibleMoves; }, [possibleMoves]);
-  const [themeIdx, setThemeIdx] = useState(0);
-  const [weatherIdx, setWeatherIdx] = useState(0);
-  const theme = BOARD_THEMES[themeIdx];
-  const weather = WEATHER[weatherIdx].name;
 
-  // Helper: convert board index to chess.js square
-  function toSquare(x: number, y: number): Square {
-    return (String.fromCharCode(97 + x) + (8 - y)) as Square;
-  }
-
-  // --- Initialize Three.js scene ONCE ---
+  // Chess.js instance
+  const chessRef = useRef(new Chess());
   useEffect(() => {
-    if (!mountRef.current) return;
-    const width = mountRef.current.clientWidth || window.innerWidth;
-    const height = mountRef.current.clientHeight || window.innerHeight;
-    // Scene
+    if (fen === 'start') chessRef.current.reset();
+    else chessRef.current.load(fen);
+  }, [fen]);
+
+  // --- Setup Three.js scene ---
+  useEffect(() => {
+    const width = mountRef.current?.clientWidth || window.innerWidth;
+    const height = mountRef.current?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(theme.bg);
-    sceneRef.current = scene;
-    // Camera
+    scene.background = new THREE.Color(0xbfd1e5);
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 10, 10);
     camera.lookAt(0, 0, 0);
-    cameraRef.current = camera;
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
-    renderer.setClearColor(theme.bg);
+    renderer.setClearColor(0xbfd1e5);
+    mountRef.current?.appendChild(renderer.domElement);
     rendererRef.current = renderer;
-    mountRef.current.appendChild(renderer.domElement);
-    // Controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enablePan = false;
-    controls.minDistance = 8;
-    controls.maxDistance = 30;
-    controls.maxPolarAngle = Math.PI / 2.1;
-    controlsRef.current = controls;
+    cameraRef.current = camera;
+    sceneRef.current = scene;
+
+    // Orbit Controls
+    let controls: OrbitControls | undefined;
+    if (mountRef.current) {
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.enablePan = false;
+      controls.minDistance = 8;
+      controls.maxDistance = 30;
+      controls.maxPolarAngle = Math.PI / 2.1;
+    }
+
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
     dirLight.position.set(5, 10, 7.5);
     scene.add(dirLight);
+
     // Board group
     const boardGroup = new THREE.Group();
     boardGroupRef.current = boardGroup;
     scene.add(boardGroup);
-    // Weather group
-    const weatherGroup = new THREE.Group();
-    weatherGroupRef.current = weatherGroup;
-    scene.add(weatherGroup);
-    // Raycaster for picking
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    function onClick(event: MouseEvent) {
+
+    // Render loop
+    function animate() {
+      controls?.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Responsive resize
+    function handleResize() {
+      const newWidth = mountRef.current?.clientWidth || window.innerWidth;
+      const newHeight = mountRef.current?.clientHeight || window.innerHeight;
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newWidth, newHeight);
+    }
+    window.addEventListener('resize', handleResize);
+
+    // Mouse click handler
+    function handleClick(event: MouseEvent) {
       if (!rendererRef.current || !cameraRef.current || !sceneRef.current) return;
       const rect = rendererRef.current.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(mouse, cameraRef.current);
-      const intersects = raycaster.intersectObjects(boardGroupRef.current?.children || [], true);
+      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.current.setFromCamera(mouse.current, cameraRef.current);
+      const intersects = raycaster.current.intersectObjects(boardGroupRef.current?.children || [], true);
       if (intersects.length > 0) {
-        // Traverse up to find userData with sq
         let obj = intersects[0].object;
         let found = false;
         while (obj) {
           const { sq, isPiece, isSquare } = obj.userData || {};
           if (sq && (isPiece || isSquare)) {
             found = true;
-            // --- Use refs for latest selected and possibleMoves ---
             const selected = selectedRef.current;
             const possibleMoves = possibleMovesRef.current;
+            const chess = chessRef.current;
             if (selected && possibleMoves.includes(sq)) {
               const move = chess.move({ from: selected, to: sq, promotion: 'q' });
               if (move) {
@@ -345,7 +138,10 @@ export default function ChessBoard3D() {
               }
             } else if (isPiece && chess.get(sq) && chess.get(sq)!.color === chess.turn()) {
               setSelected(sq);
-              setPossibleMoves(chess.moves({ square: sq, verbose: true }).map((m: { to: Square }) => m.to));
+              setPossibleMoves(chess.moves({ square: sq, verbose: true }).map((m: Move) => m.to));
+            } else if (isSquare && chess.get(sq) && chess.get(sq)!.color === chess.turn()) {
+              setSelected(sq);
+              setPossibleMoves(chess.moves({ square: sq, verbose: true }).map((m: Move) => m.to));
             } else {
               setSelected(null);
               setPossibleMoves([]);
@@ -363,175 +159,128 @@ export default function ChessBoard3D() {
         setPossibleMoves([]);
       }
     }
-    renderer.domElement.addEventListener('pointerdown', onClick);
-    // Render loop
-    let animId: number;
-    function animate() {
-      controls.update();
-      renderer.render(scene, camera);
-      animId = requestAnimationFrame(animate);
-    }
-    animate();
-    // Cleanup
+    renderer.domElement.addEventListener('click', handleClick);
+
     return () => {
-      cancelAnimationFrame(animId);
       renderer.dispose();
-      renderer.domElement.removeEventListener('pointerdown', onClick);
       mountRef.current?.removeChild(renderer.domElement);
-      scene.clear();
+      window.removeEventListener('resize', handleResize);
+      renderer.domElement.removeEventListener('click', handleClick);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Update board and weather on state change ---
+  // --- Render board and pieces on FEN change ---
   useEffect(() => {
-    const boardGroup = boardGroupRef.current;
-    if (!boardGroup) return;
-    // Remove previous children
-    while (boardGroup.children.length) boardGroup.remove(boardGroup.children[0]);
-    // --- Draw thick border under the board ---
-    const borderThickness = 0.25;
-    const borderGeometry = new THREE.BoxGeometry(8 + borderThickness * 2, 0.25, 8 + borderThickness * 2);
-    const borderMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const border = new THREE.Mesh(borderGeometry, borderMaterial);
-    border.position.set(0, -0.13, 0);
-    boardGroup.add(border);
-    // --- Draw board and pieces ---
-    const board = chess.board();
-    let selectedPiecePos: [number, number] | null = null;
-    for (let y = 0; y < 8; y++) {
-      for (let x = 0; x < 8; x++) {
-        const color = (x + y) % 2 === 0 ? theme.light : theme.dark;
-        const geometry = new THREE.BoxGeometry(1, 0.1, 1);
-        let matColor = color;
-        const sq = toSquare(x, y);
-        if (selected === sq) {
-          matColor = 0x00ff00;
-          selectedPiecePos = [x, y];
-        }
-        if (possibleMoves.includes(sq)) matColor = 0x00bfff;
-        const material = new THREE.MeshStandardMaterial({ color: matColor });
+    if (!sceneRef.current || !boardGroupRef.current) return;
+    // Remove old children
+    while (boardGroupRef.current.children.length > 0) {
+      boardGroupRef.current.remove(boardGroupRef.current.children[0]);
+    }
+    // Draw board
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      for (let z = 0; z < BOARD_SIZE; z++) {
+        const color = (x + z) % 2 === 0 ? 0xffffff : 0x222222;
+        const geometry = new THREE.BoxGeometry(SQUARE_SIZE, 0.1, SQUARE_SIZE);
+        const material = new THREE.MeshStandardMaterial({ color });
         const square = new THREE.Mesh(geometry, material);
-        square.position.set(x - 3.5, 0, y - 3.5);
-        square.userData = { x, y, sq, isSquare: true };
-        boardGroup.add(square);
-        // Piece
-        const piece = board[y][x];
-        if (piece) {
-          const mesh = createPiece(piece.type as PieceSymbol, piece.color === 'w' ? theme.pieceW : theme.pieceB);
-          mesh.position.set(x - 3.5, 0.05, y - 3.5);
-          mesh.userData = { x, y, sq, isPiece: true };
-          boardGroup.add(mesh);
+        square.position.set(x - BOARD_SIZE / 2 + SQUARE_SIZE / 2, 0, z - BOARD_SIZE / 2 + SQUARE_SIZE / 2);
+        square.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isSquare: true };
+        boardGroupRef.current.add(square);
+      }
+    }
+    // Draw pieces
+    const chess = chessRef.current;
+    chess.board().forEach((row, z) => {
+      row.forEach((piece, x) => {
+        if (!piece) return;
+        // --- 3D piece geometry: more visually distinct shapes ---
+        let mesh: THREE.Mesh;
+        let color = piece.color === 'w' ? 0xf0f0f0 : 0x222222;
+        let material = new THREE.MeshStandardMaterial({ color });
+        // Use tuple for position
+        const pos: [number, number, number] = [x - BOARD_SIZE / 2 + SQUARE_SIZE / 2, 0.3, z - BOARD_SIZE / 2 + SQUARE_SIZE / 2];
+        switch (piece.type) {
+          case 'p': // Pawn
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.18, 0.22, 0.45, 16),
+              material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
+            break;
+          case 'n': // Knight
+            mesh = new THREE.Mesh(
+              new THREE.ConeGeometry(0.22, 0.5, 16),
+              material
+            );
+            mesh.position.set(pos[0], pos[1] + 0.1, pos[2]);
+            break;
+          case 'b': // Bishop
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.15, 0.25, 0.6, 16),
+              material
+            );
+            mesh.position.set(pos[0], pos[1] + 0.1, pos[2]);
+            break;
+          case 'r': // Rook
+            mesh = new THREE.Mesh(
+              new THREE.BoxGeometry(0.32, 0.45, 0.32),
+              material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
+            break;
+          case 'q': // Queen
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.18, 0.28, 0.7, 16),
+              material
+            );
+            mesh.position.set(pos[0], pos[1] + 0.15, pos[2]);
+            break;
+          case 'k': // King
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.2, 0.3, 0.8, 16),
+              material
+            );
+            mesh.position.set(pos[0], pos[1] + 0.18, pos[2]);
+            break;
+          default:
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16),
+              material
+            );
+            mesh.position.set(pos[0], pos[1], pos[2]);
         }
-      }
-    }
-    // --- Draw path lines from selected piece to possible moves ---
-    if (selected && selectedPiecePos) {
-      for (const moveSq of possibleMoves) {
-        const file = moveSq.charCodeAt(0) - 97;
-        const rank = 8 - parseInt(moveSq[1]);
-        const from = new THREE.Vector3(selectedPiecePos[0] - 3.5, 0.18, selectedPiecePos[1] - 3.5);
-        const to = new THREE.Vector3(file - 3.5, 0.18, rank - 3.5);
-        const points = [from, to];
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const material = new THREE.LineBasicMaterial({ color: 0xffa500, linewidth: 2 });
-        const line = new THREE.Line(geometry, material);
-        boardGroup.add(line);
-      }
-    }
-  }, [fen, selected, possibleMoves, themeIdx]);
-
-  // --- Update weather effects on state change ---
-  useEffect(() => {
-    const weatherGroup = weatherGroupRef.current;
-    if (!weatherGroup) return;
-    // Remove previous children
-    while (weatherGroup.children.length) weatherGroup.remove(weatherGroup.children[0]);
-    // Weather effects
-    if (weather === 'Rain' || weather === 'Snow') {
-      const count = 200; // reduced for performance
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 12;
-        positions[i * 3 + 1] = Math.random() * 10 + 2;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 12;
-      }
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const material = new THREE.PointsMaterial({
-        color: weather === 'Rain' ? 0x66ccff : 0xffffff,
-        size: weather === 'Rain' ? 0.07 : 0.12,
-        transparent: true,
-        opacity: 0.7,
-      });
-      const weatherParticles = new THREE.Points(geometry, material);
-      weatherParticles.userData = { weatherType: weather };
-      weatherGroup.add(weatherParticles);
-    }
-    if (weather === 'Heat') {
-      const geometry = new THREE.PlaneGeometry(8, 8, 16, 16); // reduced segments
-      const material = new THREE.MeshBasicMaterial({
-        color: 0xffe082,
-        transparent: true,
-        opacity: 0.18,
-      });
-      const heatPlane = new THREE.Mesh(geometry, material);
-      heatPlane.position.y = 1.2;
-      heatPlane.userData = { weatherType: 'Heat' };
-      weatherGroup.add(heatPlane);
-    }
-  }, [weatherIdx, themeIdx, weather]);
-
-  // --- Animate weather and heat shimmer ---
-  useEffect(() => {
-    let animId: number;
-    function animateWeather() {
-      const weatherGroup = weatherGroupRef.current;
-      if (weatherGroup) {
-        for (const obj of weatherGroup.children) {
-          if (obj instanceof THREE.Points && obj.userData.weatherType) {
-            const pos = (obj.geometry as THREE.BufferGeometry).attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-              if (obj.userData.weatherType === 'Rain') {
-                pos.array[i * 3 + 1] -= 0.25;
-                if (pos.array[i * 3 + 1] < 0) pos.array[i * 3 + 1] = Math.random() * 10 + 2;
-              } else if (obj.userData.weatherType === 'Snow') {
-                pos.array[i * 3 + 1] -= 0.08;
-                pos.array[i * 3] += (Math.random() - 0.5) * 0.04;
-                pos.array[i * 3 + 2] += (Math.random() - 0.5) * 0.04;
-                if (pos.array[i * 3 + 1] < 0) pos.array[i * 3 + 1] = Math.random() * 10 + 2;
-              }
-            }
-            pos.needsUpdate = true;
-          } else if (obj instanceof THREE.Mesh && obj.userData.weatherType === 'Heat') {
-            (obj.material as THREE.MeshBasicMaterial).opacity = 0.18 + 0.08 * Math.sin(Date.now() * 0.002);
-          }
+        mesh.userData = { sq: String.fromCharCode(97 + x) + (8 - z), isPiece: true };
+        if (boardGroupRef.current) {
+          boardGroupRef.current.add(mesh);
         }
-      }
-      animId = requestAnimationFrame(animateWeather);
-    }
-    animateWeather();
-    return () => cancelAnimationFrame(animId);
-  }, [weatherIdx, themeIdx]);
+      });
+    });
 
-  // --- UI overlay for theme and weather ---
+    // --- Highlight selected square and possible moves ---
+    if (selected) {
+      // Highlight selected square
+      const selX = selected.charCodeAt(0) - 97;
+      const selZ = 8 - parseInt(selected[1]);
+      const highlight = new THREE.Mesh(
+        new THREE.BoxGeometry(SQUARE_SIZE * 0.98, 0.11, SQUARE_SIZE * 0.98),
+        new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.4 })
+      );
+      highlight.position.set(selX - BOARD_SIZE / 2 + SQUARE_SIZE / 2, 0.06, selZ - BOARD_SIZE / 2 + SQUARE_SIZE / 2);
+      if (boardGroupRef.current) boardGroupRef.current.add(highlight);
+    }
+    possibleMoves.forEach((sq) => {
+      const x = sq.charCodeAt(0) - 97;
+      const z = 8 - parseInt(sq[1]);
+      const highlight = new THREE.Mesh(
+        new THREE.BoxGeometry(SQUARE_SIZE * 0.98, 0.11, SQUARE_SIZE * 0.98),
+        new THREE.MeshStandardMaterial({ color: 0x00bfff, transparent: true, opacity: 0.35 })
+      );
+      highlight.position.set(x - BOARD_SIZE / 2 + SQUARE_SIZE / 2, 0.06, z - BOARD_SIZE / 2 + SQUARE_SIZE / 2);
+      if (boardGroupRef.current) boardGroupRef.current.add(highlight);
+    });
+  }, [fen]);
+
   return (
-    <>
-      <div ref={mountRef} style={{ width: '100vw', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 0 }} />
-      <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 10, background: '#fff8', borderRadius: 8, padding: 12, boxShadow: '0 2px 8px #0002', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <label style={{ fontWeight: 600 }}>Board Theme:</label>
-        <select value={themeIdx} onChange={e => setThemeIdx(Number(e.target.value))} style={{ fontSize: 16, borderRadius: 4, padding: 4 }}>
-          {BOARD_THEMES.map((t, i) => (
-            <option value={i} key={t.name}>{t.name}</option>
-          ))}
-        </select>
-        <label style={{ fontWeight: 600, marginTop: 8 }}>Weather:</label>
-        <select value={weatherIdx} onChange={e => setWeatherIdx(Number(e.target.value))} style={{ fontSize: 16, borderRadius: 4, padding: 4 }}>
-          {WEATHER.map((w, i) => (
-            <option value={i} key={w.name}>{w.name}</option>
-          ))}
-        </select>
-      </div>
-    </>
+    <div ref={mountRef} style={{ width: '100vw', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 0 }} />
   );
 }
